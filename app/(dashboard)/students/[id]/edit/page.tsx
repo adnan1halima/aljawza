@@ -12,13 +12,11 @@ export default async function EditStudentPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: student } = await supabase
+ const { data: student } = await supabase
     .from("students")
     .select("*")
-    .eq("id", params.id)
-    .eq("teacher_id", user!.id)
-    .single();
-
+    .eq("id", id)
+    .single() as { data: { id: string; name?: string; [key: string]: any } | null };
   if (!student) notFound();
 
   return (

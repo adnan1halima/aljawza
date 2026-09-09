@@ -47,7 +47,9 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-mosque-dark">
-          مرحبًا، {profile?.name ?? "المعلم"} 👋
+        <h1 className="text-xl font-bold text-mosque-dark">
+  مرحبًا، {(profile as { name?: string } | null)?.name ?? "المعلم"} 👋
+</h1>
         </h1>
         <p className="text-sm text-mosque-dark/60">متابعة حلقة تحفيظ القرآن الكريم</p>
       </div>

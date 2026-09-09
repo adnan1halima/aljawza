@@ -20,24 +20,24 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
+ const { data: profile } = await supabase
     .from("profiles")
     .select("name")
     .eq("id", user!.id)
-    .single();
+    .single() as { data: { name?: string } | null };
 
   const { data: students } = await supabase
     .from("students")
     .select("*")
     .eq("teacher_id", user!.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }) as { data: any[] | null };
 
   const saturday = lastSaturday();
   const { data: records } = await supabase
     .from("attendance_records")
     .select("is_present")
     .eq("teacher_id", user!.id)
-    .eq("date", saturday);
+    .eq("date", saturday) as { data: Array<{ is_present: boolean }> | null };
 
   const present = (records as Array<{ is_present: boolean }> | null)?.filter((r) => r.is_present).length ?? 0;
   const absent = (records as Array<{ is_present: boolean }> | null)?.filter((r) => !r.is_present).length ?? 0;

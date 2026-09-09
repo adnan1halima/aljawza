@@ -29,7 +29,7 @@ export default async function EditStudentPage({
   return (
     <div className="space-y-4 max-w-lg">
       <h1 className="text-xl font-bold text-mosque-dark">تعديل بيانات {student.name}</h1>
-      <StudentForm student={student} teacherId={user.id} currentCount={0} />
+      <StudentForm student={student as any} teacherId={user.id} currentCount={0} />
     </div>
   );
 }

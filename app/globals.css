@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap");
+
+html {
+  direction: rtl;
+}
+
+body {
+  font-family: "Tajawal", sans-serif;
+  background-color: #f7f6f0;
+  color: #2d2d1a;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-mosque text-white px-4 py-2 rounded-xl hover:bg-mosque-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-white border border-mosque/30 text-mosque-dark px-4 py-2 rounded-xl hover:bg-mosque-cream transition-colors;
+  }
+  .btn-danger {
+    @apply bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition-colors;
+  }
+  .input-field {
+    @apply w-full border border-mosque/20 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-mosque/40 bg-white;
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-mosque/10 p-4;
+  }
+}

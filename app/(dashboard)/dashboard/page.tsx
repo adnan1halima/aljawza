@@ -39,8 +39,8 @@ export default async function DashboardPage() {
     .eq("teacher_id", user!.id)
     .eq("date", saturday);
 
-  const present = records?.filter((r) => r.is_present).length ?? 0;
-  const absent = records?.filter((r) => !r.is_present).length ?? 0;
+  const present = (records as Array<{ is_present: boolean }> | null)?.filter((r) => r.is_present).length ?? 0;
+  const absent = (records as Array<{ is_present: boolean }> | null)?.filter((r) => !r.is_present).length ?? 0;
   const total = students?.length ?? 0;
 
   return (

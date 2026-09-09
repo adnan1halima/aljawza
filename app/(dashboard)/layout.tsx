@@ -21,7 +21,7 @@ export default async function DashboardLayout({
     .from("profiles")
     .select("name")
     .eq("id", user.id)
-    .single();
+    .single() as { data: { name?: string } | null };
 
   return (
     <div className="min-h-screen pb-16 md:pb-0">

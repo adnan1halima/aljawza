@@ -1,0 +1,37 @@
+name: Weekly Supabase Backup to Google Drive
+
+on:
+  schedule:
+    # يتم التشغيل أسبوعياً كل يوم أحد الساعة 12 منتصف الليل UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch: # يتيح لك التشغيل اليدوي للتجربة في أي وقت
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install PostgreSQL Client & Rclone
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client rclone
+
+      - name: Dump Supabase Database
+        run: |
+          TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
+          echo "BACKUP_FILE=supabase_backup_${TIMESTAMP}.sql" >> $GITHUB_ENV
+          pg_dump "${{ secrets.SUPABASE_DB_URL }}" -f "supabase_backup_${TIMESTAMP}.sql"
+
+      - name: Configure Rclone Connection
+        run: |
+          mkdir -p ~/.config/rclone
+          cat <<EOF > ~/.config/rclone/rclone.conf
+          [gdrive]
+          type = drive
+          scope = drive
+          token = ${{ secrets.RCLONE_GDRIVE_TOKEN }}
+          EOF
+
+      - name: Upload Backup to Google Drive
+        run: |
+          rclone copy ${{ env.BACKUP_FILE }} gdrive:Supabase_Backups

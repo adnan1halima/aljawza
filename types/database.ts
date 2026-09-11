@@ -89,5 +89,26 @@ export interface Database {
         Update: Partial<AttendanceRecord>;
       };
     };
+    Views: Record<string, never>;
+    Functions: {
+      get_mosque_ranking: {
+        Args: { p_student_id: string };
+        Returns: number;
+      };
+      is_current_user_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      calc_memorization_points: {
+        Args: { p_pages: number | null; p_rating: number | null };
+        Returns: number;
+      };
+      calc_status_points: {
+        Args: { p_status: string };
+        Returns: number;
+      };
+    };
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

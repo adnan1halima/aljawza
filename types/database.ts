@@ -72,11 +72,13 @@ export interface Database {
         Row: Profile;
         Insert: Partial<Profile> & { id: string; name: string; email: string };
         Update: Partial<Profile>;
+        Relationships: [];
       };
       students: {
         Row: Student;
         Insert: Partial<Student> & { teacher_id: string; name: string };
         Update: Partial<Student>;
+        Relationships: [];
       };
       attendance_records: {
         Row: AttendanceRecord;
@@ -87,6 +89,7 @@ export interface Database {
           status: AttendanceStatus;
         };
         Update: Partial<AttendanceRecord>;
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

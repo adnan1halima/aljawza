@@ -29,7 +29,7 @@ export default async function DashboardPage({
     .from("profiles")
     .select("id, name, is_admin")
     .eq("id", user!.id)
-    .single();
+    .single<{ id: string; name: string; is_admin: boolean }>();
 
   const isAdmin = myProfile?.is_admin ?? false;
 

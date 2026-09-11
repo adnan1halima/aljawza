@@ -19,7 +19,7 @@ export default async function StudentsPage({
     .from("profiles")
     .select("id, is_admin")
     .eq("id", user!.id)
-    .single();
+    .single<{ id: string; is_admin: boolean }>();
 
   const isAdmin = myProfile?.is_admin ?? false;
 

@@ -17,7 +17,8 @@ export default async function AddRecordPage({
     .select("id, name")
     .eq("id", params.id)
     .eq("teacher_id", user!.id)
-    .single() as { data: { id: string; name?: string; [key: string]: any } | null };
+    .single();
+
   if (!student) notFound();
 
   return (

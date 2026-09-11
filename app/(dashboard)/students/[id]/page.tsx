@@ -2,7 +2,15 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import RankingBadge from "@/components/RankingBadge";
 import StudentDetailActions from "@/components/StudentDetailActions";
+import DistributedPointsEditor from "@/components/DistributedPointsEditor";
 import EmptyState from "@/components/EmptyState";
+
+const statusStyles: Record<string, string> = {
+  "حضور": "bg-green-100 text-green-700",
+  "غياب": "bg-red-100 text-red-600",
+  "غياب مبرر": "bg-blue-100 text-blue-700",
+  "تأخر": "bg-yellow-100 text-yellow-700",
+};
 
 export default async function StudentDetailPage({
   params,
@@ -14,11 +22,11 @@ export default async function StudentDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // ملاحظة: سياسات RLS تسمح للمدير برؤية أي طالب، وللمعلم برؤية طلابه فقط
   const { data: student } = await supabase
     .from("students")
     .select("*")
     .eq("id", params.id)
-    .eq("teacher_id", user!.id)
     .single();
 
   if (!student) notFound();
@@ -30,16 +38,18 @@ export default async function StudentDetailPage({
     .order("date", { ascending: false });
 
   const allRecords = records ?? [];
-  const presentDays = allRecords.filter((r) => r.is_present).length;
-  const absentDays = allRecords.filter((r) => !r.is_present).length;
+  const presentDays = allRecords.filter((r) => r.status === "حضور").length;
+  const absentDays = allRecords.filter((r) => r.status === "غياب").length;
+  const excusedDays = allRecords.filter((r) => r.status === "غياب مبرر").length;
+  const lateDays = allRecords.filter((r) => r.status === "تأخر").length;
   const lastRecitation = allRecords.find((r) => r.is_present);
 
-  // ترتيب داخل حلقة المعلم
+  // ترتيب داخل حلقة المعلم (حسب المجموع الكلي)
   const { data: teacherStudents } = await supabase
     .from("students")
-    .select("id, ranking_score")
-    .eq("teacher_id", user!.id)
-    .order("ranking_score", { ascending: false });
+    .select("id, grand_total")
+    .eq("teacher_id", student.teacher_id)
+    .order("grand_total", { ascending: false });
 
   const circleRank =
     (teacherStudents ?? []).findIndex((s) => s.id === student.id) + 1 || null;
@@ -86,20 +96,29 @@ export default async function StudentDetailPage({
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="card text-center">
-          <p className="text-lg font-bold text-mosque-dark">
-            {student.ranking_score ?? 0}
-          </p>
-          <p className="text-xs text-mosque-dark/60 mt-1">إجمالي الحفظ</p>
+      {/* النقاط: السابقة + الموزعة + المجموع الكلي */}
+      <div className="card space-y-3">
+        <p className="font-bold text-mosque-dark">النقاط</p>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="text-center">
+            <p className="text-lg font-bold text-mosque-dark">{student.accumulated_points ?? 0}</p>
+            <p className="text-xs text-mosque-dark/60 mt-1">النقاط السابقة</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-mosque-dark">{student.distributed_points ?? 0}</p>
+            <p className="text-xs text-mosque-dark/60 mt-1">النقاط الموزعة</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-mosque-gold">{student.grand_total ?? 0}</p>
+            <p className="text-xs text-mosque-dark/60 mt-1">المجموع الكلي</p>
+          </div>
         </div>
-        <div className="card text-center">
-          <p className="text-lg font-bold text-green-700">{presentDays}</p>
-          <p className="text-xs text-mosque-dark/60 mt-1">أيام الحضور</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-lg font-bold text-red-600">{absentDays}</p>
-          <p className="text-xs text-mosque-dark/60 mt-1">أيام الغياب</p>
+        <div>
+          <p className="text-xs font-bold text-mosque-dark/70 mb-1">تعديل النقاط الموزعة</p>
+          <DistributedPointsEditor
+            studentId={student.id}
+            initialValue={student.distributed_points ?? 0}
+          />
         </div>
       </div>
 
@@ -131,12 +150,10 @@ export default async function StudentDetailPage({
                   <p className="font-bold text-mosque-dark text-sm">{r.date}</p>
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full ${
-                      r.is_present
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-600"
+                      statusStyles[r.status] ?? "bg-gray-100 text-gray-600"
                     }`}
                   >
-                    {r.is_present ? "حاضر" : "غائب"}
+                    {r.status}
                   </span>
                 </div>
                 {r.is_present && (
@@ -146,16 +163,51 @@ export default async function StudentDetailPage({
                         {r.surah} ({r.from_ayah}-{r.to_ayah}) · {r.recitation_type}
                       </p>
                     )}
-                    <p>مقدار الحفظ: {r.memorization_amount}</p>
-                    {r.evaluation && <p>التقييم: {r.evaluation}</p>}
+                    {r.pages != null && r.rating != null && (
+                      <p>
+                        عدد الصفحات: {r.pages} · التقييم: {r.rating}
+                      </p>
+                    )}
+                    <p>
+                      اللباس: {r.dress_code} · الأدب: {r.manners} · الانضباط: {r.discipline}
+                    </p>
+                    {r.evaluation && <p>التقييم الوصفي: {r.evaluation}</p>}
                     {r.behavior && <p>السلوك: {r.behavior}</p>}
-                    {r.notes && <p>ملاحظات: {r.notes}</p>}
                   </div>
                 )}
+                {r.notes && (
+                  <p className="text-sm text-mosque-dark/70 mt-0.5">ملاحظات: {r.notes}</p>
+                )}
+                <p className="font-bold text-mosque-dark mt-1">
+                  مجموع نقاط اليوم: {r.total_points}
+                </p>
               </div>
             ))}
           </div>
         )}
+      </div>
+
+      {/* إحصائيات الحضور خلال الدورة كاملة (في نهاية ملف الطالب) */}
+      <div className="card">
+        <p className="font-bold text-mosque-dark mb-3">إحصائيات الحضور خلال الدورة</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="text-center">
+            <p className="text-lg font-bold text-green-700">{presentDays}</p>
+            <p className="text-xs text-mosque-dark/60 mt-1">عدد أيام الحضور</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-red-600">{absentDays}</p>
+            <p className="text-xs text-mosque-dark/60 mt-1">عدد أيام الغياب</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-yellow-700">{lateDays}</p>
+            <p className="text-xs text-mosque-dark/60 mt-1">عدد أيام التأخر</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-blue-700">{excusedDays}</p>
+            <p className="text-xs text-mosque-dark/60 mt-1">عدد أيام الغياب المبرر</p>
+          </div>
+        </div>
       </div>
     </div>
   );

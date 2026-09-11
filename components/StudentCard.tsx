@@ -8,7 +8,7 @@ export default function StudentCard({
   student,
   rank,
 }: {
-  student: Student & { ranking_score?: number };
+  student: Student;
   rank?: number | null;
 }) {
   return (
@@ -25,7 +25,7 @@ export default function StudentCard({
       <div className="flex flex-col items-end gap-1">
         {rank != null && <RankingBadge rank={rank} />}
         <span className="text-xs text-mosque-dark/50">
-          مجموع الحفظ: {student.ranking_score ?? 0}
+          المجموع الكلي: {student.grand_total ?? 0}
         </span>
       </div>
     </Link>

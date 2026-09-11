@@ -7,16 +7,12 @@ import SearchBox from "./SearchBox";
 import EmptyState from "./EmptyState";
 import Link from "next/link";
 
-export default function StudentList({
-  students,
-}: {
-  students: (Student & { ranking_score?: number })[];
-}) {
+export default function StudentList({ students }: { students: Student[] }) {
   const [query, setQuery] = useState("");
 
-  // ترتيب الطلاب من الأكثر حفظًا إلى الأقل حفظًا
+  // ترتيب الطلاب من الأعلى مجموعًا كليًا (grand_total) إلى الأقل
   const ranked = useMemo(
-    () => [...students].sort((a, b) => (b.ranking_score ?? 0) - (a.ranking_score ?? 0)),
+    () => [...students].sort((a, b) => (b.grand_total ?? 0) - (a.grand_total ?? 0)),
     [students]
   );
 

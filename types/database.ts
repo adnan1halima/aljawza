@@ -1,4 +1,4 @@
-// تعريفات أنواع بيانات قاعدة البيانات (مطابقة لملف supabase/schema.sql)
+// تعريفات أنواع بيانات قاعدة البيانات (مطابقة لملف supabase/schema.sql + migration_02)
 
 export type Behavior =
   | "ممتاز"
@@ -9,11 +9,20 @@ export type Behavior =
 
 export type RecitationType = "جديد" | "مراجعة";
 
+export type AttendanceStatus = "حضور" | "غياب" | "غياب مبرر" | "تأخر";
+
+// عدد الصفحات محصور بين 1 و5، والتقييم محصور بين 1 و3 (حسب جدول النقاط)
+export type PagesCount = 1 | 2 | 3 | 4 | 5;
+export type Rating = 1 | 2 | 3;
+export type DressCode = 0 | 1 | 2 | 3;
+export type Manners = 0 | 5;
+
 export interface Profile {
   id: string;
   name: string;
   email: string;
   is_active: boolean;
+  is_admin: boolean;
   created_at: string;
 }
 
@@ -25,6 +34,9 @@ export interface Student {
   housing: string | null;
   previous_memorization: string | null;
   notes: string | null;
+  accumulated_points: number; // النقاط السابقة (تراكمية، تلقائية)
+  distributed_points: number; // النقاط الموزعة (يدوية من المعلم)
+  grand_total: number; // المجموع الكلي (تلقائي = السابقة + الموزعة)
   created_at: string;
   updated_at: string;
 }
@@ -34,15 +46,22 @@ export interface AttendanceRecord {
   student_id: string;
   teacher_id: string;
   date: string;
-  is_present: boolean;
+  status: AttendanceStatus;
+  is_present: boolean; // محسوب تلقائيًا من status (حضور/تأخر = true)
   surah: string | null;
   from_ayah: number | null;
   to_ayah: number | null;
-  memorization_amount: number;
   recitation_type: RecitationType | null;
   evaluation: string | null;
   behavior: Behavior | null;
   notes: string | null;
+  // حقول نظام النقاط الجديد
+  pages: PagesCount | null;
+  rating: Rating | null;
+  dress_code: DressCode;
+  manners: Manners;
+  discipline: number; // اختياري، رقم حر موجب أو سالب
+  total_points: number; // محسوب تلقائيًا في قاعدة البيانات
   created_at: string;
 }
 
@@ -61,11 +80,11 @@ export interface Database {
       };
       attendance_records: {
         Row: AttendanceRecord;
-        Insert: Partial<AttendanceRecord> & {
+        Insert: Omit<Partial<AttendanceRecord>, "is_present" | "total_points"> & {
           student_id: string;
           teacher_id: string;
           date: string;
-          is_present: boolean;
+          status: AttendanceStatus;
         };
         Update: Partial<AttendanceRecord>;
       };
